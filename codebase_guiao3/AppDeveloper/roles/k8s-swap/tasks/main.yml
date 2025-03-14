@@ -1,0 +1,31 @@
+- name: Create a Deployment for Swap
+  kubernetes.core.k8s:
+    definition: "{{ lookup('template', 'swap-deployment.yml') | from_yaml }}"
+    state: present
+    wait: true
+    wait_timeout: 180
+
+- name: Create a service for exposing Swap
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'swap-service.yml') | from_yaml }}"
+    wait: true
+
+- name: Wait till Swap pod is created
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: default
+    label_selectors:
+      - app=swap
+    wait: true
+    wait_sleep: 5
+    wait_timeout: 180
+  register: swap_pod_info
+
+- name: Seed Swap database
+  kubernetes.core.k8s_exec:
+    namespace: default
+    pod: "{{ swap_pod_info.resources[0].metadata.name }}"
+    command: php artisan db:seed
+  register: swap_seed
+  when: seed_db is defined and seed_db=="true"

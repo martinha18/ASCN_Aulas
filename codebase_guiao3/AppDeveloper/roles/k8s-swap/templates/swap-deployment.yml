@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swap-deployment
+  labels:
+    app: swap
+    tier: application
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: swap
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: swap
+        tier: application
+    spec:
+      containers:
+      - name: swap
+        image: "{{ image_swap }}"
+        env: # The variables below could be set on a ConfigMap object
+        - name: MYSQL_ALLOW_EMPTY_PASSWORD
+          value: "true"
+        - name: DB_HOST
+          value: "{{ db_host }}"
+        - name: DB_DATABASE
+          value: "{{ db_name }}"
+        - name: DB_USERNAME
+          value: "{{ db_username }}"
+        - name: DB_PASSWORD
+          value: "{{ db_password }}"
+        ports:
+        - containerPort: 8000
